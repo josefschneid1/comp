@@ -1,0 +1,78 @@
+P       -> D*                                       FIRST = {"var", I}                      
+D       -> V                                        FIRST = {"var"}                         
+D       -> F                                        FIRST = {I}                            
+V       -> "var" I "=" A ";"                        FIRST = {"var"}                         
+F       -> I "(" Pl ")" B                           FIRST = {I}
+Pl      -> e                                        FIRST = {e}
+Pl      -> I ("," I)*                               FIRST = {I}
+B       -> "{" S* "}"                               FIRST = {"{"}
+S       -> If                                       FIRST = {"if"}
+S       -> While                                    FIRST = {"while"}
+S       -> For                                      FIRST = {"for"}
+S       -> V                                        FIRST = {"var"}
+S       -> ES                                       FIRST = {INT, FLOAT, STR, "(", I)}
+S       -> B                                        FIRST = {"{"}
+IF      -> "if" "(" A ")" S "else" S                FIRST = {"if"}
+IF      -> "if" "(" A ")" S                         FIRST = {"if"}
+While   -> "while" "(" A ")" S                      FIRST = {"while"}
+FOR     -> "for" "(" A ")" S                        FIRST = {"for"}
+ES      -> A ";"                                    FIRST = {INT, FLOAT, STR, "(", I)
+A       -> LO ("=" LO)*                             FIRST = {INT, FLOAT, STR, "(", I)
+LO      -> LA ("||" LA)*                            FIRST = {INT, FLOAT, STR, "(", I)
+LA      -> C ("&&" C)*                              FIRST = {INT, FLOAT, STR, "(", I)
+C       -> T (("=="|"!="|"<"|"<="|">"|">=") T)*     FIRST = {INT, FLOAT, STR, "(", I)
+T       -> PR (("+"|"-") PR)*                       FIRST = {INT, FLOAT, STR, "(", I)
+PR      -> P (("*"|"/") P)*                         FIRST = {INT, FLOAT, STR, "(", I)
+P       -> FC                                       FIRST = {I}
+P       -> INT                                      FIRST = {INT}
+P       -> FLOAT                                    FIRST = {FLOAT}
+P       -> STR                                      FIRST = {STR}
+P       -> I                                        FIRST = {I}
+P       ->"(" A ")"                                 FIRST = {"("}
+FC      -> I "(" AL ")"                             FIRST = {I}
+AL      -> e                                        FIRST = {e}
+AL      -> A ( "," A)*                              FIRST = {INT, FLOAT, STR, "(", I)                         
+
+FOLLOW(P) = {$}
+FOLLOW(D) = {FOLLOW(P), FIRST(V), FIRST(F)}
+FOLLOW(V) = {FOLLOW(D),FOLLOW(S), FOLLOW(S)}
+FOLLOW(F) = {FOLLOW(D)}
+FOLLOW(Pl) = {")"}
+FOLLOW(B) = {FOLLOW(F), FOLLOW(S)}
+FOLLOW(S) = {"}","else", FOLLOW(IF), FOLLOW(WHILE), FOLLOW(FOR)}
+FOLLOW(IF) = FOLLOW(WHILE) = FOLLOW(FOR) = FOLLOW(ES) = FOLLOW(ES) = {FOLLOW(S)}
+FOLLOW(A) = {";", ")", }
+FOLLOW(LO) = {FOLLOW(A), "||"}
+FOLLOW(LA) = {FOLLOW(L0), "&&"}
+FOLLOW(C) = {FOLLOW(LA), "==", "!=", "<", "<=", ">", ">="}
+FOLLOW(T) = {FOLLOW(C), "+", "-"}
+FOLLOW(PR) = {FOLLOW(T), "*", "/"}
+FOLLOW(P) = {FOLLOW(PR)}
+FOLLOW(FC) = FOLLOW(INT) = FOLLOW(FLOAT) = FOLLOW(STR) = {FOLLOW(P)}
+FOLLOW(AL) = {")", ","}
+
+P       : Program                       
+D       : Declaration                   
+V       : Variable Declaration
+F       : Function Definition
+I       : Identifier
+Pl      : Parameter List
+B       : Block                         
+S       : Statement
+IF      : If-Statement
+While   : While-Statement
+FOR     : For-Statement
+ES      : Expression Statement
+A       : Assignment
+LO      : Logical Or
+LA      : Logical And
+C       : Comparison
+T       : Term
+PR      : Product
+P       : Primary
+FC      : Function Call
+AL      : Argument List
+INT     : Integer Literal              
+FLOAT   : Floating Point Literal        
+STR     : String Literal                
+$       : END Marker

@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.21.1 FATAL_ERROR)
+project(Compiler LANGUAGES CXX)
+add_subdirectory(Ast)
+add_subdirectory(Lexer)
+add_subdirectory(Compiler)
+add_subdirectory(Parser)
