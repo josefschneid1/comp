@@ -12,8 +12,8 @@ namespace language
     {
     };
 
-    UnexpectedToken::UnexpectedToken(const std::string& chars, int line, int column):
-        std::runtime_error(std::format("Unexpected Token {}... ({},{})", chars, line, column))
+    InvalidToken::InvalidToken(const std::string& chars, int line, int column):
+        std::runtime_error(std::format("Invalid Token {}... ({},{})", chars, line, column))
     {}
 
     Token Lexer::next()
@@ -178,7 +178,7 @@ namespace language
                     line++;
                 iter--;
             }
-            throw UnexpectedToken{std::string{start,std::min(start + 10, program.cend())}, line,column};
+            throw InvalidToken{std::string{start,std::min(start + 10, program.cend())}, line,column};
         }
         return {TokenType::BooleanLiteral};
     }

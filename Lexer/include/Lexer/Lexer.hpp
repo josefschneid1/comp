@@ -45,21 +45,97 @@ namespace language
         FloatingPointLiteral,
         BooleanLiteral, // false, true
         StringLiteral,
-
+        Var,
         Eof,
     };
 
-    class UnexpectedToken : public std::runtime_error
+    std::string tokenTypeToStr(TokenType type)
+    {
+        switch (type)
+        {
+        case TokenType::Plus:
+            return "Plus";
+        case TokenType::Minus:
+            return "Minus";
+        case TokenType::Slash:
+            return "Slash";
+        case TokenType::Star:
+            return "Star";
+        case TokenType::OpenParenthesis:
+            return "OpenParenthesis";
+        case TokenType::CloseParenthesis:
+            return "CloseParenthesis";
+        case TokenType::OpenCurlyBracket:
+            return "OpenCurlyBracket";
+        case TokenType::CloseCurlyBracket:
+            return "CloseCurlyBracket";
+        case TokenType::OpenSquareBracket:
+            return "OpenSquareBracket";
+        case TokenType::CloseSquareBracket:
+            return "CloseSquareBracket";
+        case TokenType::Comma:
+            return "Comma";
+        case TokenType::Semicolon:
+            return "Semicolon";
+        case TokenType::Dot:
+            return "Dot";
+        case TokenType::Equal:
+            return "Equal";
+        case TokenType::ExclamationMark:
+            return "ExclamationMark";
+        case TokenType::Less:
+            return "Less";
+        case TokenType::Greater:
+            return "Greater";
+        case TokenType::LessEqual:
+            return "LessEqual";
+        case TokenType::GreaterEqual:
+            return "GreaterEqual";
+        case TokenType::DoubleAmpersand:
+            return "DoubleAmpersand";
+        case TokenType::DoubleEqual:
+            return "DoubleEqual";
+        case TokenType::DoublePipe:
+            return "DoublePipe";
+        case TokenType::ExclamationMarkEqual:
+            return "ExclamationMarkEqual";
+        case TokenType::If:
+            return "If";
+        case TokenType::While:
+            return "While";
+        case TokenType::For:
+            return "For";
+        case TokenType::Else:
+            return "Else";
+        case TokenType::Id:
+            return "Id";
+        case TokenType::IntegerLiteral:
+            return "IntegerLiteral";
+        case TokenType::FloatingPointLiteral:
+            return "FloatingPointLiteral";
+        case TokenType::BooleanLiteral:
+            return "BooleanLiteral";
+        case TokenType::StringLiteral:
+            return "StringLiteral";
+        case TokenType::Var:
+            return "Var";
+        case TokenType::Eof:
+            return "Eof";
+        default:
+            throw std::invalid_argument("Missing TokenType");
+        }
+    }
+
+
+    class InvalidToken : public std::runtime_error
     {
     public:
-        UnexpectedToken(const std::string& chars, int line, int column);
+        InvalidToken(const std::string& chars, int line, int column);
     };
 
-    class Token
+    struct Token
     {
-    public:
         Token(TokenType type, const std::string& lexem = "");
-    private:
         TokenType type;
         std::string lexem;
     };
@@ -78,7 +154,8 @@ namespace language
             {"for", TokenType::For},
             {"if", TokenType::If},
             {"true", TokenType::BooleanLiteral},
-            {"false", TokenType::BooleanLiteral}
+            {"false", TokenType::BooleanLiteral},
+            {"var", TokenType::Var},
         };
     };
 }

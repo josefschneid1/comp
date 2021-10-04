@@ -56,12 +56,19 @@ namespace language
     {
         std::string name;
         std::unique_ptr<Expr> init;
+        VarDecl(std::string name, std::unique_ptr<Expr> init):
+            name{std::move(name)}, init{std::move(init)}
+        {}
         void accept(Visitor& v) override;
     };
 
     struct Block : public Stmt
     {
         std::vector<std::unique_ptr<Stmt>> stmts;
+        Block(std::vector<std::unique_ptr<Stmt>> stmts):
+            stmts{std::move(stmts)}
+        {}
+        Block(){}
         void accept(Visitor& v) override;
     };
 
@@ -70,6 +77,10 @@ namespace language
         std::string name;
         std::vector<std::string> params;
         std::unique_ptr<Block> block;
+        FuncDef(std::string name, std::vector<std::string> params, std::unique_ptr<Block> block):
+            name{std::move(name)}, params{std::move(params)}, block{std::move(block)}
+        {}
+
         void accept(Visitor& v) override;
     };
 
@@ -78,6 +89,9 @@ namespace language
         std::unique_ptr<Expr> expr;
         std::unique_ptr<Stmt> trueStmt;
         std::unique_ptr<Stmt> falseStmt;
+        If(std::unique_ptr<Expr> expr, std::unique_ptr<Stmt> trueStmt, std::unique_ptr<Stmt> falseStmt = nullptr):
+            expr{std::move(expr)}, trueStmt{std::move(trueStmt)}, falseStmt{std::move(falseStmt)}
+        {}
         void accept(Visitor& v) override;
     };
 
@@ -85,12 +99,18 @@ namespace language
     {
         std::unique_ptr<Expr> expr;
         std::unique_ptr<Stmt> stmt;
+        While(std::unique_ptr<Expr> expr, std::unique_ptr<Stmt> stmt):
+            expr{std::move(expr)}, stmt{std::move(stmt)}
+            {}
         void accept(Visitor& v) override;
     };
 
     struct ExprStmt : public Stmt
     {
         std::unique_ptr<Expr> expr;
+        ExprStmt(std::unique_ptr<Expr> expr):
+            expr{std::move(expr)}
+        {}
         void accept(Visitor& v) override;
     };
 
@@ -99,6 +119,9 @@ namespace language
         std::unique_ptr<Expr> leftHs;
         std::unique_ptr<Expr> rightHs;
         BinOperator op;
+        BinExpr(std::unique_ptr<Expr> leftHs, std::unique_ptr<Expr> rightHs, BinOperator op):
+            leftHs{std::move(leftHs)}, rightHs{std::move(rightHs)}, op{op}
+        {}
         void accept(Visitor& v) override;
     };
 
@@ -106,12 +129,18 @@ namespace language
     {
         std::string name;
         std::vector<std::unique_ptr<Expr>> args;
+        FuncCall(std::string name, std::vector<std::unique_ptr<Expr>> args):
+            name{std::move(name)}, args{std::move(args)}
+            {}
         void accept(Visitor& v) override;
     };
 
     struct Variable : public Expr
     {
         std::string name;
+        Variable(std::string name):
+            name{std::move(name)}
+            {}
         void accept(Visitor& v) override;
     };
 
@@ -119,12 +148,16 @@ namespace language
     struct Literal : public Expr
     {
         T v;
+        Literal(T v):
+            v{std::move(v)}
+            {}
         void accept(Visitor& v) override;
     };
 
     using StrLiteral = Literal<std::string>;
     using IntLiteral = Literal<int>;
     using FloatLiteral = Literal<double>;
+    using BooleanLiteral = Literal<bool>;
 
     struct Visitor
     {
@@ -139,6 +172,7 @@ namespace language
         virtual void visit(StrLiteral& decl) = 0;
         virtual void visit(IntLiteral& decl) = 0;
         virtual void visit(FloatLiteral& decl) = 0;
+        virtual void visit(BooleanLiteral& decl) = 0;
         virtual void visit(Variable& decl) = 0;
 
         virtual ~Visitor() = default;
@@ -147,6 +181,6 @@ namespace language
     template<typename T>
     void Literal<T>::accept(Visitor& v)
     {
-            v.visit(*this);
+        v.visit(*this);
     }
 }
