@@ -8,6 +8,7 @@ target_compile_features(Parser
 target_sources(Parser
     PRIVATE
         src/Parser.cpp
+        src/SymbolTable.cpp
 )
 
 target_include_directories(Parser
