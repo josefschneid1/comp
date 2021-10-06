@@ -1,4 +1,4 @@
-add_library(Lexer OBJECT)
+add_library(Lexer STATIC)
 
 target_compile_features(Lexer
     PUBLIC
@@ -13,6 +13,14 @@ target_sources(Lexer
 target_include_directories(Lexer
     PRIVATE
         ./include/Lexer
-    INTERFACE
+    PUBLIC
         ./include
 )
+
+add_executable(lexer_test test/main.cpp)
+target_compile_features(lexer_test
+    PUBLIC
+        cxx_std_23
+)
+target_link_libraries(lexer_test PRIVATE Catch2::Catch2 Lexer)
+catch_discover_tests(lexer_test)

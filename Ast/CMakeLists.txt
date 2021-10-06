@@ -1,4 +1,4 @@
-add_library(Ast OBJECT)
+add_library(Ast STATIC)
 
 target_compile_features(Ast
     PUBLIC
@@ -13,6 +13,6 @@ target_sources(Ast
 target_include_directories(Ast
     PRIVATE
         ./include/Ast
-    INTERFACE
+    PUBLIC
         ./include
 )

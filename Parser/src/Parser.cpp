@@ -20,7 +20,7 @@ namespace language
     auto Parser::program() -> Program
     {
         Program prog;
-        while(!match(TokenType::Eof))
+        while (!match(TokenType::Eof))
         {
             prog.declarations.push_back(declaration());
         }
@@ -29,11 +29,11 @@ namespace language
 
     auto Parser::declaration() -> std::unique_ptr<Decl>
     {
-        if(match(TokenType::Var))
+        if (match(TokenType::Var))
         {
             return variableDeclaration();
         }
-        else if(match(TokenType::Id))
+        else if (match(TokenType::Id))
         {
             return functionDefinition();
         }
@@ -64,11 +64,11 @@ namespace language
     {
         consume(TokenType::OpenParenthesis);
         std::vector<std::string> params;
-        while(peek().type == TokenType::Id)
+        while (peek().type == TokenType::Id)
         {
             params.push_back(peek().lexem);
             advance();
-            if(peek().type == TokenType::Comma)
+            if (peek().type == TokenType::Comma)
                 advance();
         }
         consume(TokenType::CloseParenthesis);
@@ -79,7 +79,7 @@ namespace language
     {
         consume(TokenType::OpenCurlyBracket);
         std::vector<std::unique_ptr<Stmt>> stmts;
-        while(peek().type != TokenType::CloseCurlyBracket)
+        while (peek().type != TokenType::CloseCurlyBracket)
         {
             stmts.push_back(statement());
         }
@@ -89,45 +89,44 @@ namespace language
 
     auto Parser::statement() -> std::unique_ptr<Stmt>
     {
-        if(match(TokenType::If))
+        if (match(TokenType::If))
         {
             return ifStatement();
         }
-        else if(match(TokenType::While))
+        else if (match(TokenType::While))
         {
             return whileStatement();
         }
-        else if(match(TokenType::For))
+        else if (match(TokenType::For))
         {
             return forStatement();
         }
-        else if(match(TokenType::Var))
+        else if (match(TokenType::Var))
         {
             return variableDeclaration();
         }
-        else if(match(TokenType::IntegerLiteral,
-                      TokenType::FloatingPointLiteral,
-                      TokenType::StringLiteral,
-                      TokenType::BooleanLiteral,
-                      TokenType::OpenParenthesis))
+        else if (match(TokenType::IntegerLiteral,
+                       TokenType::FloatingPointLiteral,
+                       TokenType::StringLiteral,
+                       TokenType::BooleanLiteral,
+                       TokenType::OpenParenthesis))
         {
             return expressionStatement();
         }
         else
         {
-            throw UnexpectedToken(peek(), 
-             TokenType::If,
-             TokenType::While, 
-             TokenType::For,
-             TokenType::Var,
-             TokenType::OpenParenthesis,
-             TokenType::IntegerLiteral,
-             TokenType::FloatingPointLiteral,
-             TokenType::StringLiteral,
-             TokenType::BooleanLiteral);
+            throw UnexpectedToken(peek(),
+                                  TokenType::If,
+                                  TokenType::While,
+                                  TokenType::For,
+                                  TokenType::Var,
+                                  TokenType::OpenParenthesis,
+                                  TokenType::IntegerLiteral,
+                                  TokenType::FloatingPointLiteral,
+                                  TokenType::StringLiteral,
+                                  TokenType::BooleanLiteral);
         }
     }
-
 
     auto Parser::ifStatement() -> std::unique_ptr<If>
     {
@@ -135,7 +134,7 @@ namespace language
         auto expr = assignment();
         consume(TokenType::CloseParenthesis);
         auto stmt = statement();
-        if(match(TokenType::Else))
+        if (match(TokenType::Else))
         {
             advance();
             return std::make_unique<If>(std::move(expr), std::move(stmt), statement());
@@ -172,9 +171,8 @@ namespace language
 
         auto whileStmt = std::make_unique<While>(
             std::move(exprStmt->expr),
-            std::move(loopBody)
-        );
-        
+            std::move(loopBody));
+
         blck->stmts.push_back(std::move(whileStmt));
 
         return std::move(blck);
@@ -190,7 +188,7 @@ namespace language
     auto Parser::assignment() -> std::unique_ptr<Expr>
     {
         auto lo = logicalOr();
-        if(match(TokenType::Equal))
+        if (match(TokenType::Equal))
         {
             advance();
             return std::make_unique<BinExpr>(std::move(lo), assignment(), BinOperator::Equal);
@@ -201,10 +199,10 @@ namespace language
     auto Parser::logicalOr() -> std::unique_ptr<Expr>
     {
         auto la = logicalAnd();
-        while(match(TokenType::DoublePipe))
+        while (match(TokenType::DoublePipe))
         {
             advance();
-            la = std::make_unique<BinExpr>(std::move(la),logicalAnd(), BinOperator::Or);
+            la = std::make_unique<BinExpr>(std::move(la), logicalAnd(), BinOperator::Or);
         }
         return la;
     }
@@ -212,10 +210,10 @@ namespace language
     auto Parser::logicalAnd() -> std::unique_ptr<Expr>
     {
         auto comp = comparision();
-        while(match(TokenType::DoubleAmpersand))
+        while (match(TokenType::DoubleAmpersand))
         {
             advance();
-            comp = std::make_unique<BinExpr>(std::move(comp),comparision(), BinOperator::And);
+            comp = std::make_unique<BinExpr>(std::move(comp), comparision(), BinOperator::And);
         }
         return comp;
     }
@@ -223,16 +221,16 @@ namespace language
     auto Parser::comparision() -> std::unique_ptr<Expr>
     {
         auto ter = term();
-        while(match(TokenType::Less, 
-                    TokenType::LessEqual,
-                    TokenType::Greater,
-                    TokenType::GreaterEqual,
-                    TokenType::DoubleEqual,
-                    TokenType::ExclamationMarkEqual))
-        {   
-            #pragma warning( push )
-            #pragma warning( disable : 4715)
-            auto op  = [this] ()->BinOperator 
+        while (match(TokenType::Less,
+                     TokenType::LessEqual,
+                     TokenType::Greater,
+                     TokenType::GreaterEqual,
+                     TokenType::DoubleEqual,
+                     TokenType::ExclamationMarkEqual))
+        {
+#pragma warning(push)
+#pragma warning(disable : 4715)
+            auto op = [this]() -> BinOperator
             {
                 switch (this->peek().type)
                 {
@@ -247,25 +245,24 @@ namespace language
                 case TokenType::Equal:
                     return BinOperator::Equal;
                 case TokenType::ExclamationMarkEqual:
-                    return BinOperator::NotEqual;    
+                    return BinOperator::NotEqual;
                 }
             }();
-            #pragma warning( pop ) 
+#pragma warning(pop)
 
             advance();
-            ter = std::make_unique<BinExpr>(std::move(ter),term(), op);
-
+            ter = std::make_unique<BinExpr>(std::move(ter), term(), op);
         }
         return ter;
     }
     auto Parser::term() -> std::unique_ptr<Expr>
     {
         auto p = product();
-        while(match(TokenType::Plus, TokenType::Minus))
+        while (match(TokenType::Plus, TokenType::Minus))
         {
             auto op = peek().type == TokenType::Plus ? BinOperator::Plus : BinOperator::Minus;
             advance();
-            p = std::make_unique<BinExpr>(std::move(p),product(), op);
+            p = std::make_unique<BinExpr>(std::move(p), product(), op);
         }
         return p;
     }
@@ -273,46 +270,46 @@ namespace language
     auto Parser::product() -> std::unique_ptr<Expr>
     {
         auto p = primary();
-        while(match(TokenType::Star, TokenType::Slash))
+        while (match(TokenType::Star, TokenType::Slash))
         {
             auto op = peek().type == TokenType::Star ? BinOperator::Mul : BinOperator::Div;
             advance();
-            p = std::make_unique<BinExpr>(std::move(p),primary(), op);
+            p = std::make_unique<BinExpr>(std::move(p), primary(), op);
         }
         return p;
     }
 
     auto Parser::primary() -> std::unique_ptr<Expr>
     {
-        if(match(TokenType::IntegerLiteral))
+        if (match(TokenType::IntegerLiteral))
         {
             auto lit = peek().lexem;
             advance();
             return std::make_unique<IntLiteral>(std::stoi(lit));
         }
-        else if(match(TokenType::FloatingPointLiteral))
+        else if (match(TokenType::FloatingPointLiteral))
         {
             auto lit = peek().lexem;
             advance();
             return std::make_unique<FloatLiteral>(std::stod(lit));
         }
-        else if(match(TokenType::BooleanLiteral))
+        else if (match(TokenType::BooleanLiteral))
         {
             auto lit = peek().lexem;
             advance();
             return std::make_unique<BooleanLiteral>(lit == "true" ? true : false);
         }
-        else if(match(TokenType::StringLiteral))
+        else if (match(TokenType::StringLiteral))
         {
             auto lit = peek().lexem;
             advance();
             return std::make_unique<StrLiteral>(lit);
         }
-        else if(match(TokenType::Id))
+        else if (match(TokenType::Id))
         {
             auto name = peek().lexem;
             advance();
-            if(match(TokenType::OpenParenthesis))
+            if (match(TokenType::OpenParenthesis))
             {
                 auto args = argumentList();
                 return std::make_unique<FuncCall>(std::move(name), std::move(args));
@@ -321,25 +318,23 @@ namespace language
         }
         else
         {
-            throw UnexpectedToken(peek(), 
-                TokenType::IntegerLiteral,
-                TokenType::FloatingPointLiteral,
-                TokenType::BooleanLiteral,
-                TokenType::StringLiteral,
-                TokenType::Id            
-            );
+            throw UnexpectedToken(peek(),
+                                  TokenType::IntegerLiteral,
+                                  TokenType::FloatingPointLiteral,
+                                  TokenType::BooleanLiteral,
+                                  TokenType::StringLiteral,
+                                  TokenType::Id);
         }
-
     }
 
     auto Parser::argumentList() -> std::vector<std::unique_ptr<Expr>>
     {
         consume(TokenType::OpenParenthesis);
         std::vector<std::unique_ptr<Expr>> args;
-        while(!match(TokenType::CloseParenthesis))
+        while (!match(TokenType::CloseParenthesis))
         {
             args.push_back(assignment());
-            if(match(TokenType::Semicolon))
+            if (match(TokenType::Semicolon))
             {
                 advance();
             }

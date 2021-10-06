@@ -1,4 +1,4 @@
-add_library(Parser OBJECT)
+add_library(Parser STATIC)
 
 target_compile_features(Parser
     PUBLIC
@@ -13,8 +13,12 @@ target_sources(Parser
 target_include_directories(Parser
     PRIVATE
         ./include/Parser
-    INTERFACE
+    PUBLIC
         ./include
 )
 
 target_link_libraries(Parser Lexer Ast)
+
+add_executable(parser_test test/main.cpp)
+target_link_libraries(parser_test PRIVATE Catch2::Catch2 Parser)
+catch_discover_tests(parser_test)

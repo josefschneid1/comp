@@ -6,9 +6,11 @@
 #include <concepts>
 #include <stdexcept>
 #include <format>
+#include <iostream>
 
 namespace language
 {
+    
     class UnexpectedToken : public std::runtime_error
     {
     public:
@@ -49,22 +51,18 @@ namespace language
         auto advance() -> void;
         auto peek() -> const Token &;
 
-        template <typename ... TArgs>
+        template <typename... TArgs>
         auto match(TokenType first, TArgs... tokenTypes) -> bool
         {
             if (peek().type == first)
             {
                 return true;
             }
-            else
+            if constexpr (sizeof...(tokenTypes) > 0)
             {
                 return match(tokenTypes...);
             }
-        }
-
-        auto match(TokenType first) -> bool
-        {
-            return peek().type == first;
+            return false;
         }
 
         template <std::same_as<TokenType>... TArgs>
@@ -73,19 +71,10 @@ namespace language
             if (peek().type == first)
             {
                 advance();
-                consume(tokenTypes...);
-            }
-            else
-            {
-                throw UnexpectedToken(peek(), first);
-            }
-        }
-
-        auto consume(TokenType first) -> void
-        {
-            if (peek().type == first)
-            {
-                advance();
+                if constexpr (sizeof...(tokenTypes) > 0)
+                {
+                    consume(tokenTypes...);
+                }
             }
             else
             {
@@ -96,4 +85,5 @@ namespace language
         Lexer lexer;
         Token next;
     };
+
 }

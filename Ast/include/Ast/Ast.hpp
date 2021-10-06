@@ -20,10 +20,15 @@ namespace language
         Less,LessEqual,Greater,GreaterEqual,Equal,NotEqual, // Comparison
     };
 
+    struct AstNode : public Visitable
+    {
+        virtual ~AstNode() = default;
+    };
+
     /*
         A declaration is either a variable declaration or a function defintion.
     */
-    struct Decl : public Visitable
+    struct Decl : public AstNode
     {
         virtual ~Decl() = default;
     };
@@ -31,7 +36,7 @@ namespace language
     /*
         A statement does not produce a value, it has a side effect.
     */
-    struct Stmt : public Visitable
+    struct Stmt : public AstNode
     {
         virtual ~Stmt() = default;
     };
@@ -39,7 +44,7 @@ namespace language
     /*
         A expression evaluates to a value.
     */
-    struct Expr : public Visitable
+    struct Expr : public AstNode
     {
         virtual ~Expr() = default;
     };
@@ -47,9 +52,10 @@ namespace language
     /*
         A program is a sequence of declarations. 
     */
-    struct Program
+    struct Program : public AstNode
     {
         std::vector<std::unique_ptr<Decl>> declarations;
+        void accept(Visitor& v) override;
     };
 
     struct VarDecl : public Decl, public Stmt // A variable declaration can appear at global as well as local scope
@@ -161,19 +167,20 @@ namespace language
 
     struct Visitor
     {
-        virtual void visit(VarDecl& decl) = 0;
-        virtual void visit(FuncDef& decl) = 0;
-        virtual void visit(Block& decl) = 0;
-        virtual void visit(If& decl) = 0;
-        virtual void visit(While& decl) = 0;
-        virtual void visit(ExprStmt& decl) = 0;
-        virtual void visit(FuncCall& decl) = 0;
-        virtual void visit(BinExpr& decl) = 0;
-        virtual void visit(StrLiteral& decl) = 0;
-        virtual void visit(IntLiteral& decl) = 0;
-        virtual void visit(FloatLiteral& decl) = 0;
-        virtual void visit(BooleanLiteral& decl) = 0;
-        virtual void visit(Variable& decl) = 0;
+        virtual void visit(VarDecl&) = 0;
+        virtual void visit(FuncDef&) = 0;
+        virtual void visit(Block&) = 0;
+        virtual void visit(If&) = 0;
+        virtual void visit(While&) = 0;
+        virtual void visit(ExprStmt&) = 0;
+        virtual void visit(FuncCall&) = 0;
+        virtual void visit(BinExpr&) = 0;
+        virtual void visit(StrLiteral&) = 0;
+        virtual void visit(IntLiteral&) = 0;
+        virtual void visit(FloatLiteral&) = 0;
+        virtual void visit(BooleanLiteral&) = 0;
+        virtual void visit(Variable&) = 0;
+        virtual void visit(Program& program) = 0;
 
         virtual ~Visitor() = default;
     };
