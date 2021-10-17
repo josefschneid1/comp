@@ -2,6 +2,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include "SymbolTable.hpp"
 
 namespace language
 {
@@ -20,50 +21,51 @@ namespace language
         Less,LessEqual,Greater,GreaterEqual,Equal,NotEqual, // Comparison
     };
 
-    struct AstNode : public Visitable
-    {
-        virtual ~AstNode() = default;
-    };
-
     /*
         A declaration is either a variable declaration or a function defintion.
     */
-    struct Decl : public AstNode
+    struct Decl : public Visitable
     {
-        virtual ~Decl() = default;
     };
 
     /*
         A statement does not produce a value, it has a side effect.
     */
-    struct Stmt : public AstNode
+    struct Stmt : public Visitable
     {
-        virtual ~Stmt() = default;
+        std::string label;
     };
 
     /*
         A expression evaluates to a value.
     */
-    struct Expr : public AstNode
+    struct Expr : public Visitable
     {
-        virtual ~Expr() = default;
+        SymbolTable::Type* type;
+        Expr(SymbolTable::Type* type):
+            type{type}
+        {}
     };
 
     /*
         A program is a sequence of declarations. 
     */
-    struct Program : public AstNode
+    struct Program 
     {
         std::vector<std::unique_ptr<Decl>> declarations;
-        void accept(Visitor& v) override;
+        std::unique_ptr<SymbolTable> sym_table;
+
+        Program(std::unique_ptr<SymbolTable> sym_table):
+            sym_table{std::move(sym_table)}
+        {}
     };
 
     struct VarDecl : public Decl, public Stmt // A variable declaration can appear at global as well as local scope
     {
-        std::string name;
+        SymbolTable::Variable* var;
         std::unique_ptr<Expr> init;
-        VarDecl(std::string name, std::unique_ptr<Expr> init):
-            name{std::move(name)}, init{std::move(init)}
+        VarDecl(SymbolTable::Variable* var, std::unique_ptr<Expr> init):
+            var{var}, init{std::move(init)}
         {}
         void accept(Visitor& v) override;
     };
@@ -71,8 +73,9 @@ namespace language
     struct Block : public Stmt
     {
         std::vector<std::unique_ptr<Stmt>> stmts;
-        Block(std::vector<std::unique_ptr<Stmt>> stmts):
-            stmts{std::move(stmts)}
+        SymbolTable* symbols;
+        Block(std::vector<std::unique_ptr<Stmt>> stmts, SymbolTable* symbols):
+            stmts{std::move(stmts)}, symbols{symbols}
         {}
         Block(){}
         void accept(Visitor& v) override;
@@ -81,12 +84,10 @@ namespace language
     struct FuncDef : public Decl
     {
         std::string name;
-        std::vector<std::string> params;
         std::unique_ptr<Block> block;
-        FuncDef(std::string name, std::vector<std::string> params, std::unique_ptr<Block> block):
-            name{std::move(name)}, params{std::move(params)}, block{std::move(block)}
-        {}
-
+        SymbolTable* params;
+        SymbolTable::Type* returnType;
+        FuncDef(std::string name, SymbolTable* params, std::unique_ptr<Block> block);
         void accept(Visitor& v) override;
     };
 
@@ -111,6 +112,14 @@ namespace language
         void accept(Visitor& v) override;
     };
 
+    struct Return : public Stmt
+    {
+        std::unique_ptr<Expr> expr;
+        Return(std::unique_ptr<Expr> expr = nullptr):
+            expr{std::move(expr)}{}
+        void accept(Visitor& v) override;
+    };
+
     struct ExprStmt : public Stmt
     {
         std::unique_ptr<Expr> expr;
@@ -125,7 +134,9 @@ namespace language
         std::unique_ptr<Expr> leftHs;
         std::unique_ptr<Expr> rightHs;
         BinOperator op;
-        BinExpr(std::unique_ptr<Expr> leftHs, std::unique_ptr<Expr> rightHs, BinOperator op):
+        BinExpr(std::unique_ptr<Expr> leftHs, std::unique_ptr<Expr> rightHs,
+         BinOperator op, SymbolTable::Type* type):
+            Expr{type},
             leftHs{std::move(leftHs)}, rightHs{std::move(rightHs)}, op{op}
         {}
         void accept(Visitor& v) override;
@@ -133,19 +144,21 @@ namespace language
 
     struct FuncCall : public Expr
     {
-        std::string name;
+        SymbolTable::Function* function;
         std::vector<std::unique_ptr<Expr>> args;
-        FuncCall(std::string name, std::vector<std::unique_ptr<Expr>> args):
-            name{std::move(name)}, args{std::move(args)}
+        FuncCall(SymbolTable::Function* function, std::vector<std::unique_ptr<Expr>> args):
+            Expr{function->def->returnType},
+            args{std::move(args)}
             {}
         void accept(Visitor& v) override;
     };
 
-    struct Variable : public Expr
+    struct VariableAccess : public Expr
     {
-        std::string name;
-        Variable(std::string name):
-            name{std::move(name)}
+        SymbolTable::Variable* var;
+        VariableAccess(SymbolTable::Variable* var):
+            Expr{var->type},
+            var{var}
             {}
         void accept(Visitor& v) override;
     };
@@ -154,7 +167,8 @@ namespace language
     struct Literal : public Expr
     {
         T v;
-        Literal(T v):
+        Literal(T v, SymbolTable::Type* type):
+            Expr{type},
             v{std::move(v)}
             {}
         void accept(Visitor& v) override;
@@ -172,6 +186,7 @@ namespace language
         virtual void visit(Block&) = 0;
         virtual void visit(If&) = 0;
         virtual void visit(While&) = 0;
+        virtual void visit(Return&) = 0;
         virtual void visit(ExprStmt&) = 0;
         virtual void visit(FuncCall&) = 0;
         virtual void visit(BinExpr&) = 0;
@@ -179,7 +194,7 @@ namespace language
         virtual void visit(IntLiteral&) = 0;
         virtual void visit(FloatLiteral&) = 0;
         virtual void visit(BooleanLiteral&) = 0;
-        virtual void visit(Variable&) = 0;
+        virtual void visit(VariableAccess&) = 0;
         virtual void visit(Program& program) = 0;
 
         virtual ~Visitor() = default;

@@ -69,6 +69,9 @@ namespace language
             case '.':
                 pos++;
                 return {TokenType::Dot};
+            case ':':
+                pos++;
+                return {TokenType::Colon};
             case '=':
                 pos++;
                 if (pos != program.cend() && *pos == '=')

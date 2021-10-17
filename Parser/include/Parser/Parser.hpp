@@ -7,10 +7,10 @@
 #include <stdexcept>
 #include <format>
 #include <iostream>
+#include "Ast/SymbolTable.hpp"
 
 namespace language
 {
-    
     class UnexpectedToken : public std::runtime_error
     {
     public:
@@ -31,12 +31,13 @@ namespace language
         auto declaration() -> std::unique_ptr<Decl>;
         auto variableDeclaration() -> std::unique_ptr<VarDecl>;
         auto functionDefinition() -> std::unique_ptr<FuncDef>;
-        auto parameterList() -> std::vector<std::string>;
+        auto parameterList() -> void;
         auto block() -> std::unique_ptr<Block>;
         auto statement() -> std::unique_ptr<Stmt>;
         auto ifStatement() -> std::unique_ptr<If>;
         auto whileStatement() -> std::unique_ptr<While>;
         auto forStatement() -> std::unique_ptr<Stmt>;
+        auto returnStatement() -> std::unique_ptr<Return>;
         auto expressionStatement() -> std::unique_ptr<ExprStmt>;
         auto assignment() -> std::unique_ptr<Expr>;
         auto logicalOr() -> std::unique_ptr<Expr>;
@@ -84,6 +85,7 @@ namespace language
 
         Lexer lexer;
         Token next;
+        SymbolTable* top;
     };
 
 }

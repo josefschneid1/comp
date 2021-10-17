@@ -19,6 +19,7 @@ namespace language
         OpenSquareBracket,  // [
         CloseSquareBracket,
         Comma,
+        Colon,
         Semicolon,
         Dot,
         Equal,
@@ -34,18 +35,22 @@ namespace language
         LessEqual,
         GreaterEqual,
 
+        //Keywords
         If,
-
-        //Multiple Character Tokens
         While,
         Else,
         For,
+        Return,
+        Var,
+        BooleanLiteral, // false, true
+
+        //Multiple Character Tokens
         Id,
         IntegerLiteral,
         FloatingPointLiteral,
-        BooleanLiteral, // false, true
         StringLiteral,
-        Var,
+
+        //Special
         Eof,
     };
 
@@ -80,6 +85,7 @@ namespace language
             {"true", TokenType::BooleanLiteral},
             {"false", TokenType::BooleanLiteral},
             {"var", TokenType::Var},
+            {"return", TokenType::Return}
         };
     };
 }

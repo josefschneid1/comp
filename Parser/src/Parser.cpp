@@ -1,9 +1,10 @@
 #include "Parser.hpp"
 
+
 namespace language
 {
     Parser::Parser(const std::string &program) : lexer{program},
-                                                 next{lexer.next()}
+                                                 next{lexer.next()}, top{nullptr}
     {
     }
 
@@ -19,7 +20,12 @@ namespace language
 
     auto Parser::program() -> Program
     {
-        Program prog;
+        Program prog{std::make_unique<SymbolTable>(top)};
+        top = prog.sym_table.get();
+        top->put("int", SymbolTable::Type{.size = 4});
+        top->put("float", SymbolTable::Type{.size = 4});
+        top->put("bool", SymbolTable::Type{.size = 1});
+
         while (!match(TokenType::Eof))
         {
             prog.declarations.push_back(declaration());
@@ -50,33 +56,72 @@ namespace language
         consume(TokenType::Id, TokenType::Equal);
         auto init = assignment();
         consume(TokenType::Semicolon);
-        return std::make_unique<VarDecl>(std::move(varName), std::move(init));
+
+        auto& vardecl = top->put(varName, SymbolTable::Variable{
+            .name = varName,
+            .type = init->type,
+            .scope = (top->parent == nullptr ? SymbolTable::Scope::Global : SymbolTable::Scope::Local),
+            .offset = -1,
+            .active = true,
+            .alive = true,
+            .temp = false
+        });
+
+        return std::make_unique<VarDecl>(&std::get<SymbolTable::Variable>(vardecl), std::move(init));
     }
 
     auto Parser::functionDefinition() -> std::unique_ptr<FuncDef>
     {
         auto funcName = peek().lexem;
         consume(TokenType::Id);
-        auto params = parameterList();
-        return std::make_unique<FuncDef>(std::move(funcName), std::move(params), block());
+        parameterList();
+        auto def =  std::make_unique<FuncDef>(funcName, top, block());
+        top = top->parent;
+        top->put(std::move(funcName), SymbolTable::Function{def.get()});
+        return std::move(def);
     }
-    auto Parser::parameterList() -> std::vector<std::string>
+
+    auto Parser::parameterList() -> void
     {
+        top->addChild(std::make_unique<SymbolTable>(top));
+        top = top->children[top->children.size()-1].get();
+        int offset = 0;
         consume(TokenType::OpenParenthesis);
-        std::vector<std::string> params;
-        while (peek().type == TokenType::Id)
+        while (peek().type != TokenType::CloseParenthesis)
         {
-            params.push_back(peek().lexem);
-            advance();
+            auto paraName = peek().lexem;
+            consume(TokenType::Id, TokenType::Colon);
+            auto typeName = peek().lexem;
+            consume(TokenType::Id);
+
+            auto& type = top->get(typeName);
+            if(!std::holds_alternative<SymbolTable::Type>(type))
+            {
+                throw 1;
+            }
+
+            top->put(paraName, SymbolTable::Variable{
+                .name = paraName,
+                .type = &std::get<SymbolTable::Type>(type),
+                .scope = SymbolTable::Scope::Para,
+                .offset = offset,
+                .active = true,
+                .alive = true, // ????
+                .temp = false
+            });
+
+            offset += std::get<SymbolTable::Type>(type).size;
+
             if (peek().type == TokenType::Comma)
                 advance();
         }
         consume(TokenType::CloseParenthesis);
-        return params;
     }
 
     auto Parser::block() -> std::unique_ptr<Block>
     {
+        top->addChild(std::make_unique<SymbolTable>(top));
+        top = top->children[top->children.size()-1].get();
         consume(TokenType::OpenCurlyBracket);
         std::vector<std::unique_ptr<Stmt>> stmts;
         while (peek().type != TokenType::CloseCurlyBracket)
@@ -84,7 +129,9 @@ namespace language
             stmts.push_back(statement());
         }
         consume(TokenType::CloseCurlyBracket);
-        return std::make_unique<Block>(std::move(stmts));
+        auto blck = std::make_unique<Block>(std::move(stmts), top);
+        top = top->parent;
+        return std::move(blck);
     }
 
     auto Parser::statement() -> std::unique_ptr<Stmt>
@@ -104,6 +151,10 @@ namespace language
         else if (match(TokenType::Var))
         {
             return variableDeclaration();
+        }
+        else if (match(TokenType::Return))
+        {
+            return returnStatement();
         }
         else if (match(TokenType::IntegerLiteral,
                        TokenType::FloatingPointLiteral,
@@ -178,6 +229,14 @@ namespace language
         return std::move(blck);
     }
 
+    auto Parser::returnStatement() -> std::unique_ptr<Return>
+    {
+        consume(TokenType::Return);
+        auto ret =  std::make_unique<Return>(assignment());
+        consume(TokenType::Semicolon);
+        return std::move(ret);
+    }
+
     auto Parser::expressionStatement() -> std::unique_ptr<ExprStmt>
     {
         auto expr = assignment();
@@ -191,7 +250,7 @@ namespace language
         if (match(TokenType::Equal))
         {
             advance();
-            return std::make_unique<BinExpr>(std::move(lo), assignment(), BinOperator::Equal);
+            return std::make_unique<BinExpr>(std::move(lo), assignment(), BinOperator::Equal, lo->type);     //TODO Type Check/Conversion
         }
         return lo;
     }
@@ -202,7 +261,7 @@ namespace language
         while (match(TokenType::DoublePipe))
         {
             advance();
-            la = std::make_unique<BinExpr>(std::move(la), logicalAnd(), BinOperator::Or);
+            la = std::make_unique<BinExpr>(std::move(la), logicalAnd(), BinOperator::Or, la->type);
         }
         return la;
     }
@@ -213,7 +272,7 @@ namespace language
         while (match(TokenType::DoubleAmpersand))
         {
             advance();
-            comp = std::make_unique<BinExpr>(std::move(comp), comparision(), BinOperator::And);
+            comp = std::make_unique<BinExpr>(std::move(comp), comparision(), BinOperator::And, comp->type);
         }
         return comp;
     }
@@ -251,7 +310,7 @@ namespace language
 #pragma warning(pop)
 
             advance();
-            ter = std::make_unique<BinExpr>(std::move(ter), term(), op);
+            ter = std::make_unique<BinExpr>(std::move(ter), term(), op, ter->type);
         }
         return ter;
     }
@@ -262,7 +321,7 @@ namespace language
         {
             auto op = peek().type == TokenType::Plus ? BinOperator::Plus : BinOperator::Minus;
             advance();
-            p = std::make_unique<BinExpr>(std::move(p), product(), op);
+            p = std::make_unique<BinExpr>(std::move(p), product(), op, p->type);
         }
         return p;
     }
@@ -274,7 +333,7 @@ namespace language
         {
             auto op = peek().type == TokenType::Star ? BinOperator::Mul : BinOperator::Div;
             advance();
-            p = std::make_unique<BinExpr>(std::move(p), primary(), op);
+            p = std::make_unique<BinExpr>(std::move(p), primary(), op, p->type);
         }
         return p;
     }
@@ -285,25 +344,25 @@ namespace language
         {
             auto lit = peek().lexem;
             advance();
-            return std::make_unique<IntLiteral>(std::stoi(lit));
+            return std::make_unique<IntLiteral>(std::stoi(lit), &std::get<SymbolTable::Type>(top->get("int")));
         }
         else if (match(TokenType::FloatingPointLiteral))
         {
             auto lit = peek().lexem;
             advance();
-            return std::make_unique<FloatLiteral>(std::stod(lit));
+            return std::make_unique<FloatLiteral>(std::stod(lit), &std::get<SymbolTable::Type>(top->get("float")));
         }
         else if (match(TokenType::BooleanLiteral))
         {
             auto lit = peek().lexem;
             advance();
-            return std::make_unique<BooleanLiteral>(lit == "true" ? true : false);
+            return std::make_unique<BooleanLiteral>(lit == "true" ? true : false, &std::get<SymbolTable::Type>(top->get("bool")));
         }
         else if (match(TokenType::StringLiteral))
         {
             auto lit = peek().lexem;
             advance();
-            return std::make_unique<StrLiteral>(lit);
+            return std::make_unique<StrLiteral>(lit, nullptr); // TODO
         }
         else if (match(TokenType::Id))
         {
@@ -312,9 +371,21 @@ namespace language
             if (match(TokenType::OpenParenthesis))
             {
                 auto args = argumentList();
-                return std::make_unique<FuncCall>(std::move(name), std::move(args));
+                auto& function = top->get(name);
+                if(!std::holds_alternative<SymbolTable::Function>(function))
+                {
+                    throw 1;
+                }
+                return std::make_unique<FuncCall>(&std::get<SymbolTable::Function>(function), std::move(args));
             }
-            return std::make_unique<Variable>(std::move(name));
+            auto& variable = top->get(name);
+
+            if(!std::holds_alternative<SymbolTable::Variable>(variable))
+            {
+                throw 1;
+            }
+
+            return std::make_unique<VariableAccess>(&std::get<SymbolTable::Variable>(variable));
         }
         else
         {
@@ -342,4 +413,5 @@ namespace language
         consume(TokenType::CloseParenthesis);
         return args;
     }
+
 }

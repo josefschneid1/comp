@@ -8,6 +8,7 @@ target_compile_features(Ast
 target_sources(Ast
     PRIVATE
         src/Ast.cpp
+        src/SymbolTable.cpp
 )
 
 target_include_directories(Ast

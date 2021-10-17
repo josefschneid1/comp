@@ -4,7 +4,8 @@ D       -> F                                        FIRST = {I}
 V       -> "var" I "=" A ";"                        FIRST = {"var"}                         
 F       -> I "(" Pl ")" B                           FIRST = {I}
 Pl      -> e                                        FIRST = {e}
-Pl      -> I ("," I)*                               FIRST = {I}
+Pl      -> I TS ("," I TS)*                         FIRST = {I}
+TS      -> ":" I                                    FIRST = {":"}
 B       -> "{" S* "}"                               FIRST = {"{"}
 S       -> If                                       FIRST = {"if"}
 S       -> While                                    FIRST = {"while"}
@@ -12,6 +13,9 @@ S       -> For                                      FIRST = {"for"}
 S       -> V                                        FIRST = {"var"}
 S       -> ES                                       FIRST = {INT, FLOAT, STR, BOOL, "(", I)}
 S       -> B                                        FIRST = {"{"}
+S       -> R                                        FIRST = {"return"}
+R       -> "return" A ";"                           FIRST = {"return"}
+R       -> "return" ";"                             FIRST = {"return"}
 IF      -> "if" "(" A ")" S "else" S                FIRST = {"if"}
 IF      -> "if" "(" A ")" S                         FIRST = {"if"}
 While   -> "while" "(" A ")" S                      FIRST = {"while"}
@@ -57,6 +61,7 @@ P       : Program
 D       : Declaration                   
 V       : Variable Declaration
 F       : Function Definition
+R       : Return Statement
 I       : Identifier
 Pl      : Parameter List
 B       : Block                         
@@ -78,4 +83,5 @@ INT     : Integer Literal
 FLOAT   : Floating Point Literal        
 STR     : String Literal          
 BOOL    : Boolean Literal      
+TS      : Type Specifier
 $       : END Marker
